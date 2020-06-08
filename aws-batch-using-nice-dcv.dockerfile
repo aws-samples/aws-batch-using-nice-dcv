@@ -6,7 +6,7 @@ ENV container docker
 # Install tools
 RUN yum -y install tar sudo less vim lsof firewalld net-tools pciutils \
                    file wget kmod xz-utils ca-certificates binutils kbd \
-                   python3-pip bind-utils
+                   python3-pip bind-utils jq
 
 # Install awscli and configure region only
 # Note: required to run aws ssm command
@@ -31,8 +31,8 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
 # Add test user accounts (sample)
 RUN adduser user001 -u 1001 && \
     echo "user001:$(aws secretsmanager get-secret-value --secret-id \
-              Run_DCV_in_Batch --query SecretString  --output text | \
-              jq -r .user001)" | chpasswd
+                    Run_DCV_in_Batch --query SecretString  --output text | \
+                    jq -r .user001)" | chpasswd
 
 # Install Nvidia Driver, configure Xorg, install NICE DCV server
 RUN wget http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run && \
@@ -74,13 +74,20 @@ RUN echo "[Unit]" > /usr/lib/systemd/system/dcvserver.service && \
     echo "WantedBy=multi-user.target" >> /usr/lib/systemd/system/dcvserver.service && \
     systemctl set-default graphical.target
 
+# Install Paraview with requirements
+RUN yum -y install libgomp && \
+    wget -O ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.8&type=binary&os=Linux&downloadFile=ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz" && \
+    mkdir -p /opt/paraview && \
+    tar zxf  ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz --directory /opt/paraview/ --strip 1 && \
+    rm -f ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz
+
 # Open required port on firewall, start a DCV session for user
 RUN echo "firewall-cmd --zone=public --permanent --add-port=8443/tcp" >> "/etc/rc.local" && \
     echo "firewall-cmd --reload" >> "/etc/rc.local" && \
     echo "/bin/dcv create-session --owner user001 --user user001 user001session" >> /etc/rc.local && \
     chmod +x "/etc/rc.local"
 
-# Disable audit, configure Xorg, start DCV server
+# Configure Xorg, start DCV server
 RUN echo '#!/bin/bash' > /tmp/run_script.sh && \
     echo "systemctl enable dcvserver"  >> /tmp/run_script.sh && \
     echo "exec /usr/sbin/init" >> /tmp/run_script.sh && \
