@@ -78,6 +78,8 @@ RUN echo "firewall-cmd --zone=public --permanent --add-port=8443/tcp" >> "/etc/r
  && echo "/bin/dcv create-session --owner ${_USERNAME} --user ${_USERNAME} ${_USERNAME}session" >> "/etc/rc.local" \
  && chmod +x "/etc/rc.local" "/usr/local/bin/run_script.sh"
 
+EXPOSE 8443
+
 CMD ["/usr/local/bin/run_script.sh"]
 
 FROM dcv
