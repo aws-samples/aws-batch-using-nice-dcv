@@ -8,7 +8,7 @@ ARG AWS_REGION=eu-west-1
 # Install tools
 RUN yum -y install tar sudo less vim lsof firewalld net-tools pciutils \
                    file wget kmod xz-utils ca-certificates binutils kbd \
-                   python3-pip bind-utils jq
+                   python3-pip bind-utils jq bc
 
 # Install awscli and configure region only
 # Note: required to run aws ssm command
@@ -33,13 +33,13 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
 # Add test user accounts (sample)
 RUN adduser "$(aws secretsmanager get-secret-value --secret-id \
                    Run_DCV_in_Batch --query SecretString  --output text | \
-                   jq -r  'keys[0]')" \
+                   jq -r  'keys[0]')" -G wheel \
  && echo "$(aws secretsmanager get-secret-value --secret-id \
                    Run_DCV_in_Batch --query SecretString --output text | \
           sed 's/\"//g' | sed 's/{//' | sed 's/}//')" | chpasswd
 
 # Install Nvidia Driver, configure Xorg, install NICE DCV server
-RUN wget http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
+RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
  && bash /tmp/NVIDIA-installer.run --accept-license \
                               --no-runlevel-check \
                               --no-questions \
@@ -69,14 +69,18 @@ COPY dcvserver.service /usr/lib/systemd/system/dcvserver.service
 # Start DCV server and initialize level 5
 COPY run_script.sh /usr/local/bin/
 
+# Send Notification message DCV session ready
+COPY send_dcvsessionready_notification.sh /usr/local/bin/
+
 # Open required port on firewall, start a DCV session for user
 RUN echo "firewall-cmd --zone=public --permanent --add-port=8443/tcp" >> "/etc/rc.local" \
  && echo "firewall-cmd --reload" >> "/etc/rc.local" \
  && _USERNAME="$(aws secretsmanager get-secret-value --secret-id \
                    Run_DCV_in_Batch --query SecretString  --output text | \
                    jq -r  'keys[0]')" \
+ && echo '/usr/local/bin/send_dcvsessionready_notification.sh >/dev/null 2>&1 &'  >> "/etc/rc.local" \
  && echo "/bin/dcv create-session --owner ${_USERNAME} --user ${_USERNAME} ${_USERNAME}session" >> "/etc/rc.local" \
- && chmod +x "/etc/rc.local" "/usr/local/bin/run_script.sh"
+ && chmod +x "/etc/rc.local" "/usr/local/bin/run_script.sh" "/usr/local/bin/send_dcvsessionready_notification.sh"
 
 EXPOSE 8443
 
@@ -85,7 +89,7 @@ CMD ["/usr/local/bin/run_script.sh"]
 FROM dcv
 # Install Paraview with requirements
 RUN yum -y install libgomp \
- && wget -O ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.8&type=binary&os=Linux&downloadFile=ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz" \
+ && wget -q -O ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.8&type=binary&os=Linux&downloadFile=ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz" \
  && mkdir -p /opt/paraview \
  && tar zxf  ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz --directory /opt/paraview/ --strip 1 \
  && rm -f ParaView-5.8.0-MPI-Linux-Python3.7-64bit.tar.gz
