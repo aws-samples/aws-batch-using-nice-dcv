@@ -30,14 +30,6 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
                    gnu-free-mono-fonts gnu-free-sans-fonts \
                    gnu-free-serif-fonts desktop-backgrounds-gnome
 
-# Add test user accounts (sample)
-RUN adduser "$(aws secretsmanager get-secret-value --secret-id \
-                   Run_DCV_in_Batch --query SecretString  --output text | \
-                   jq -r  'keys[0]')" -G wheel \
- && echo "$(aws secretsmanager get-secret-value --secret-id \
-                   Run_DCV_in_Batch --query SecretString --output text | \
-          sed 's/\"//g' | sed 's/{//' | sed 's/}//')" | chpasswd
-
 # Install Nvidia Driver, configure Xorg, install NICE DCV server
 RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
  && bash /tmp/NVIDIA-installer.run --accept-license \
@@ -72,15 +64,14 @@ COPY run_script.sh /usr/local/bin/
 # Send Notification message DCV session ready
 COPY send_dcvsessionready_notification.sh /usr/local/bin/
 
-# Open required port on firewall, start a DCV session for user
-RUN echo "firewall-cmd --zone=public --permanent --add-port=8443/tcp" >> "/etc/rc.local" \
- && echo "firewall-cmd --reload" >> "/etc/rc.local" \
- && _USERNAME="$(aws secretsmanager get-secret-value --secret-id \
-                   Run_DCV_in_Batch --query SecretString  --output text | \
-                   jq -r  'keys[0]')" \
- && echo '/usr/local/bin/send_dcvsessionready_notification.sh >/dev/null 2>&1 &'  >> "/etc/rc.local" \
- && echo "/bin/dcv create-session --owner ${_USERNAME} --user ${_USERNAME} ${_USERNAME}session" >> "/etc/rc.local" \
- && chmod +x "/etc/rc.local" "/usr/local/bin/run_script.sh" "/usr/local/bin/send_dcvsessionready_notification.sh"
+# Open required port on firewall, create test user, send notification, start DCV session for the user
+COPY startup_script.sh /usr/local/bin
+
+# Append the startup script to be executed at the end of initialization and fix permissions
+RUN echo "/usr/local/bin/startup_script.sh" >> "/etc/rc.local" \
+ && chmod +x "/etc/rc.local" "/usr/local/bin/run_script.sh" \
+             "/usr/local/bin/send_dcvsessionready_notification.sh"
+             "/usr/local/bin/startup_script.sh"
 
 EXPOSE 8443
 
