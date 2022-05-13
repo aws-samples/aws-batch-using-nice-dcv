@@ -44,7 +44,7 @@ RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.8
                               --no-kernel-module-source \
  && rm -f /tmp/NVIDIA-installer.run \
  && nvidia-xconfig --preserve-busid \
- && rpm --import https://s3-eu-west-1.amazonaws.com/nice-dcv-publish/NICE-GPG-KEY \
+ && rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
  && mkdir -p /tmp/dcv-inst \
  && cd /tmp/dcv-inst \
  && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2020.0/Servers/nice-dcv-2020.0-8428-el7.tgz |tar xfz - --strip-components=1 \
