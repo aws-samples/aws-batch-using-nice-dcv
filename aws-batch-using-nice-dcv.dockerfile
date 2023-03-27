@@ -73,6 +73,11 @@ RUN echo "/usr/local/bin/startup_script.sh" >> "/etc/rc.local" \
              "/usr/local/bin/send_dcvsessionready_notification.sh" \
              "/usr/local/bin/startup_script.sh"
 
+ENV DISPLAY=":0"
+ENV NVIDIA_VISIBLE_DEVICES="0"
+ENV NVIDIA_ALL_CAPABILITIES="all"
+
+
 EXPOSE 8443
 
 CMD ["/usr/local/bin/run_script.sh"]
