@@ -1,4 +1,4 @@
-FROM amazonlinux:latest as dcv
+FROM amazonlinux:2 as dcv
 
 # Prepare the container to run systemd inside
 ENV container docker
@@ -30,8 +30,8 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
                    gnu-free-mono-fonts gnu-free-sans-fonts \
                    gnu-free-serif-fonts desktop-backgrounds-gnome
 
-# Install Nvidia Driver, configure Xorg, install NICE DCV server
-RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
+# Install Nvidia Driver
+RUN wget -q https://us.download.nvidia.com/tesla/535.129.03/NVIDIA-Linux-x86_64-535.129.03.run -O /tmp/NVIDIA-installer.run \
  && bash /tmp/NVIDIA-installer.run --accept-license \
                               --no-runlevel-check \
                               --no-questions \
@@ -43,17 +43,20 @@ RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.8
                               --no-nvidia-modprobe \
                               --no-kernel-module-source \
  && rm -f /tmp/NVIDIA-installer.run \
- && nvidia-xconfig --preserve-busid \
- && rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
+ && nvidia-xconfig --preserve-busid
+# Configure Xorg, install NICE DCV server
+RUN rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
  && mkdir -p /tmp/dcv-inst \
  && cd /tmp/dcv-inst \
- && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2020.0/Servers/nice-dcv-2020.0-8428-el7.tgz |tar xfz - --strip-components=1 \
+ && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2023.1/Servers/nice-dcv-2023.1-16388-el7-x86_64.tgz |tar xfz - --strip-components=1 \
  && yum -y install \
-    nice-dcv-gl-2020.0.759-1.el7.i686.rpm \
-    nice-dcv-gltest-2020.0.229-1.el7.x86_64.rpm \
-    nice-dcv-gl-2020.0.759-1.el7.x86_64.rpm \
-    nice-dcv-server-2020.0.8428-1.el7.x86_64.rpm \
-    nice-xdcv-2020.0.296-1.el7.x86_64.rpm
+    nice-dcv-server-2023.1.16388-1.el7.x86_64.rpm \
+    nice-dcv-simple-external-authenticator-2023.1.228-1.el7.x86_64.rpm \
+    nice-dcv-web-viewer-2023.1.16388-1.el7.x86_64.rpm \
+    nice-xdcv-2023.1.565-1.el7.x86_64.rpm \
+    nice-dcv-gl-2023.1.1047-1.el7.x86_64.rpm \
+    nice-dcv-gltest-2023.1.325-1.el7.x86_64.rpm \
+ && rm -rf /tmp/dcv-inst
 
 # Define the dcvserver.service
 COPY dcvserver.service /usr/lib/systemd/system/dcvserver.service
