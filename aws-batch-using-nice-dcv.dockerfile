@@ -30,7 +30,7 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
                    gnu-free-mono-fonts gnu-free-sans-fonts \
                    gnu-free-serif-fonts desktop-backgrounds-gnome
 
-# Install Nvidia Driver, configure Xorg, install NICE DCV server
+# Install Nvidia Driver
 RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
  && bash /tmp/NVIDIA-installer.run --accept-license \
                               --no-runlevel-check \
@@ -43,8 +43,9 @@ RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.8
                               --no-nvidia-modprobe \
                               --no-kernel-module-source \
  && rm -f /tmp/NVIDIA-installer.run \
- && nvidia-xconfig --preserve-busid \
- && rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
+ && nvidia-xconfig --preserve-busid
+# Configure Xorg, install NICE DCV server
+RUN rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
  && mkdir -p /tmp/dcv-inst \
  && cd /tmp/dcv-inst \
  && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2020.0/Servers/nice-dcv-2020.0-8428-el7.tgz |tar xfz - --strip-components=1 \
