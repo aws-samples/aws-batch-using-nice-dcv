@@ -48,13 +48,15 @@ RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.8
 RUN rpm --import https://d1uj6qtbmh3dt5.cloudfront.net/NICE-GPG-KEY \
  && mkdir -p /tmp/dcv-inst \
  && cd /tmp/dcv-inst \
- && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2020.0/Servers/nice-dcv-2020.0-8428-el7.tgz |tar xfz - --strip-components=1 \
+ && wget -qO- https://d1uj6qtbmh3dt5.cloudfront.net/2023.1/Servers/nice-dcv-2023.1-16388-el7-x86_64.tgz |tar xfz - --strip-components=1 \
  && yum -y install \
-    nice-dcv-gl-2020.0.759-1.el7.i686.rpm \
-    nice-dcv-gltest-2020.0.229-1.el7.x86_64.rpm \
-    nice-dcv-gl-2020.0.759-1.el7.x86_64.rpm \
-    nice-dcv-server-2020.0.8428-1.el7.x86_64.rpm \
-    nice-xdcv-2020.0.296-1.el7.x86_64.rpm
+    nice-dcv-server-2023.1.16388-1.el7.x86_64.rpm \
+    nice-dcv-simple-external-authenticator-2023.1.228-1.el7.x86_64.rpm \
+    nice-dcv-web-viewer-2023.1.16388-1.el7.x86_64.rpm \
+    nice-xdcv-2023.1.565-1.el7.x86_64.rpm \
+    nice-dcv-gl-2023.1.1047-1.el7.x86_64.rpm \
+    nice-dcv-gltest-2023.1.325-1.el7.x86_64.rpm \
+ && rm -rf /tmp/dcv-inst
 
 # Define the dcvserver.service
 COPY dcvserver.service /usr/lib/systemd/system/dcvserver.service
