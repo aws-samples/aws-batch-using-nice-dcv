@@ -31,7 +31,7 @@ RUN yum -y install glx-utils mesa-dri-drivers xorg-x11-server-Xorg \
                    gnu-free-serif-fonts desktop-backgrounds-gnome
 
 # Install Nvidia Driver
-RUN wget -q http://us.download.nvidia.com/tesla/418.87/NVIDIA-Linux-x86_64-418.87.00.run -O /tmp/NVIDIA-installer.run \
+RUN wget -q https://us.download.nvidia.com/tesla/535.129.03/NVIDIA-Linux-x86_64-535.129.03.run -O /tmp/NVIDIA-installer.run \
  && bash /tmp/NVIDIA-installer.run --accept-license \
                               --no-runlevel-check \
                               --no-questions \
